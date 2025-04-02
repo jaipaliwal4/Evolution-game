@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evolve & Survive: The Trade-Off Game</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background: #c8f7f0;
+      color: #333;
+      text-align: center;
+      padding: 20px;
+    }
+    .game-container {
+      background: #fff8dc;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      max-width: 600px;
+      margin: auto;
+    }
+    .stats {
+      margin-bottom: 20px;
+    }
+    .progress-bar {
+      width: 100%;
+      background: #ddd;
+      border-radius: 5px;
+      margin: 5px 0;
+    }
+    .progress-bar-fill {
+      height: 10px;
+      background: #ffa500;
+      border-radius: 5px;
+    }
+    .choice-btn {
+      display: block;
+      margin: 10px auto;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      background: #ffa500;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .choice-btn:hover {
+      background: #ff7f00;
+    }
+    .fun-fact {
+      font-style: italic;
+      color: #555;
+      margin-top: 10px;
+    }
+    .end-message {
+      font-size: 1.2em;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    #playAgainBtn, #startBtn {
+      display: block;
+      margin: 20px auto;
+      padding: 12px 24px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #playAgainBtn:hover, #startBtn:hover {
+      background: #218838;
+    }
+    img.icon {
+      width: 40px;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+    .environment-select {
+      margin: 15px 0;
+    }
+    .environment-btn {
+      margin: 5px;
+      padding: 10px 15px;
+      background: #17a2b8;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .environment-btn:hover {
+      background: #138496;
+    }
+    .animal-image {
+      width: 100px;
+      height: 100px;
+      margin: 10px auto;
+      display: block;
+    }
+    .environment-icon {
+      font-size: 24px;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>Evolve & Survive</h1>
+    <div id="startScreen">
+      <p>Choose your starting environment:</p>
+      <div class="environment-select">
+        <button class="environment-btn" onclick="selectEnvironment('arctic')"><span class="environment-icon">❄️</span> Arctic</button>
+        <button class="environment-btn" onclick="selectEnvironment('desert')"><span class="environment-icon">🏜️</span> Desert</button>
+        <button class="environment-btn" onclick="selectEnvironment('forest')"><span class="environment-icon">🌲</span> Forest</button>
+        <button class="environment-btn" onclick="selectEnvironment('jungle')"><span class="environment-icon">🌴</span> Jungle</button>
+        <button class="environment-btn" onclick="selectEnvironment('ocean')"><span class="environment-icon">🌊</span> Ocean</button>
+        <button class="environment-btn" onclick="selectEnvironment('grassland')"><span class="environment-icon">🌾</span> Grassland</button>
+      </div>
+      <button id="startBtn" onclick="startGame()">Begin Evolution!</button>
+    </div>
+    <div id="gameScreen" style="display: none;">
+      <p id="environmentDisplay"></p>
+      <div class="stats" id="stats"></div>
+      <div id="game"></div>
+      <div class="end-message" id="endMessage"></div>
+      <img id="animalImage" class="animal-image" style="display: none;">
+      <button id="playAgainBtn">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    const stats = {
+      energy: 5,
+      speed: 5,
+      intelligence: 5,
+      stealth: 5,
+      strength: 5,
+      reproduction: 5,
+      resistance: 5
+    };
+
+    let currentEnvironment = '';
+    let stageIndex = 0;
+    let stages = [];
+
+    const environmentStages = {
+      arctic: [
+        {
+          text: "The temperature is dropping dangerously low! How will you adapt?",
+          choices: [
+            { text: "Develop thick blubber", effect: () => { stats.resistance += 3; stats.speed -= 2; }, fact: "Blubber provides excellent insulation but makes movement harder!" },
+            { text: "Grow white fur", effect: () => { stats.stealth += 3; stats.energy -= 1; }, fact: "White fur provides camouflage but requires extra grooming!" },
+            { text: "Hibernate during coldest months", effect: () => { stats.energy += 2; stats.reproduction -= 1; }, fact: "Hibernation conserves energy but reduces breeding opportunities!" }
+          ]
+        },
+        {
+          text: "Food is scarce in the frozen landscape!",
+          choices: [
+            { text: "Develop keen sense of smell", effect: () => { stats.intelligence += 2; stats.energy -= 1; }, fact: "Better smell helps find food but requires brainpower!" },
+            { text: "Become a skilled hunter", effect: () => { stats.strength += 3; stats.energy -= 2; }, fact: "Hunting skills provide food but are energy-intensive!" },
+            { text: "Switch to scavenging", effect: () => { stats.stealth += 2; stats.resistance -= 1; }, fact: "Scavenging is safer but exposes you to pathogens!" }
+          ]
+        }
+      ],
+      desert: [
+        {
+          text: "Your environment is extremely hot and dry! How will you adapt?",
+          choices: [
+            { text: "Develop reflective scales", effect: () => { stats.resistance += 3; stats.energy -= 2; }, fact: "Scales reflect heat but require extra energy to maintain!" },
+            { text: "Develop efficient kidneys", effect: () => { stats.resistance += 2; stats.reproduction -= 1; }, fact: "Water conservation helps but reduces reproductive energy!" },
+            { text: "Burrow underground", effect: () => { stats.stealth += 2; stats.energy -= 1; }, fact: "Burrowing avoids heat but uses lots of energy." }
+          ]
+        },
+        {
+          text: "Water sources are few and far between!",
+          choices: [
+            { text: "Store water in your body", effect: () => { stats.resistance += 3; stats.speed -= 2; }, fact: "Water storage helps survival but makes you slower!" },
+            { text: "Get water from food", effect: () => { stats.intelligence += 2; stats.energy -= 1; }, fact: "Finding juicy food requires smarts and energy!" },
+            { text: "Migrate to find water", effect: () => { stats.speed += 3; stats.reproduction -= 1; }, fact: "Migration finds resources but reduces breeding time!" }
+          ]
+        }
+      ],
+      forest: [
+        {
+          text: "The dense forest makes movement difficult!",
+          choices: [
+            { text: "Develop climbing ability", effect: () => { stats.strength += 2; stats.speed -= 1; }, fact: "Climbing helps access food but limits ground speed!" },
+            { text: "Become smaller to navigate undergrowth", effect: () => { stats.stealth += 3; stats.strength -= 1; }, fact: "Small size helps movement but reduces strength!" },
+            { text: "Develop strong jaws to chew through vegetation", effect: () => { stats.strength += 2; stats.energy -= 1; }, fact: "Strong jaws help feeding but require energy!" }
+          ]
+        },
+        {
+          text: "Predators lurk in the shadows!",
+          choices: [
+            { text: "Develop camouflage", effect: () => { stats.stealth += 3; stats.energy -= 2; }, fact: "Camouflage helps avoid predators but requires energy!" },
+            { text: "Form family groups", effect: () => { stats.reproduction += 2; stats.intelligence += 1; }, fact: "Groups provide safety but require social intelligence!" },
+            { text: "Develop warning colors", effect: () => { stats.resistance += 2; stats.stealth -= 2; }, fact: "Warning signs deter predators but make you visible!" }
+          ]
+        }
+      ],
+      jungle: [
+        {
+          text: "The humid jungle is full of competition!",
+          choices: [
+            { text: "Develop bright colors to attract mates", effect: () => { stats.reproduction += 3; stats.stealth -= 2; }, fact: "Bright colors help reproduction but reduce stealth!" },
+            { text: "Become nocturnal", effect: () => { stats.stealth += 2; stats.energy -= 1; }, fact: "Night activity avoids competition but disrupts rhythms!" },
+            { text: "Specialize in rare food sources", effect: () => { stats.intelligence += 2; stats.resistance -= 1; }, fact: "Specialization reduces competition but is risky!" }
+          ]
+        },
+        {
+          text: "The canopy is full of dangerous predators!",
+          choices: [
+            { text: "Develop poison", effect: () => { stats.resistance += 3; stats.energy -= 2; }, fact: "Poison deters predators but is costly to produce!" },
+            { text: "Evolve to look like something dangerous", effect: () => { stats.stealth += 2; stats.intelligence += 1; }, fact: "Mimicry requires intelligence to maintain!" },
+            { text: "Develop loud warning calls", effect: () => { stats.reproduction += 1; stats.stealth -= 2; }, fact: "Warning calls help others but reveal your location!" }
+          ]
+        }
+      ],
+      ocean: [
+        {
+          text: "The open ocean offers little shelter!",
+          choices: [
+            { text: "Develop schooling behavior", effect: () => { stats.reproduction += 2; stats.intelligence += 1; }, fact: "Schools provide safety but require coordination!" },
+            { text: "Grow to enormous size", effect: () => { stats.strength += 3; stats.speed -= 2; }, fact: "Large size deters predators but slows you down!" },
+            { text: "Develop bioluminescence", effect: () => { stats.reproduction += 1; stats.stealth -= 1; }, fact: "Light attracts mates but also predators!" }
+          ]
+        },
+        {
+          text: "Food is scattered throughout the water column!",
+          choices: [
+            { text: "Develop filter feeding", effect: () => { stats.energy += 2; stats.strength -= 1; }, fact: "Filter feeding is efficient but limits food options!" },
+            { text: "Become an active hunter", effect: () => { stats.strength += 3; stats.energy -= 2; }, fact: "Hunting provides food but is energy-intensive!" },
+            { text: "Follow migrating food sources", effect: () => { stats.speed += 3; stats.reproduction -= 1; }, fact: "Migration finds food but reduces breeding time!" }
+          ]
+        }
+      ],
+      grassland: [
+        {
+          text: "The open plains offer no cover from predators!",
+          choices: [
+            { text: "Develop incredible speed", effect: () => { stats.speed += 3; stats.energy -= 2; }, fact: "Speed helps escape but burns energy fast!" },
+            { text: "Grow large horns for defense", effect: () => { stats.strength += 3; stats.speed -= 1; }, fact: "Horns deter predators but can slow you down!" },
+            { text: "Dig extensive burrow systems", effect: () => { stats.stealth += 3; stats.energy -= 1; }, fact: "Burrows provide safety but require maintenance!" }
+          ]
+        },
+        {
+          text: "Seasonal changes affect food availability!",
+          choices: [
+            { text: "Develop varied diet", effect: () => { stats.resistance += 2; stats.intelligence += 1; }, fact: "Varied diet helps survival but requires learning!" },
+            { text: "Store fat for lean times", effect: () => { stats.energy += 2; stats.speed -= 1; }, fact: "Fat storage helps but makes you slower!" },
+            { text: "Migrate with the seasons", effect: () => { stats.speed += 3; stats.reproduction -= 1; }, fact: "Migration finds food but reduces breeding time!" }
+          ]
+        }
+      ]
+    };
+
+    const animalOutcomes = {
+      arctic: {
+        highIntelligence: [
+          { name: "Arctic Fox", emoji: "🦊", desc: "Clever hunters with seasonal camouflage and excellent hearing.", img: "https://emojicdn.elk.sh/🦊" },
+          { name: "Polar Bear", emoji: "🐻‍❄️", desc: "Intelligent apex predators of the Arctic with incredible sense of smell.", img: "https://emojicdn.elk.sh/🐻‍❄️" }
+        ],
+        highStrength: [
+          { name: "Walrus", emoji: "🦭", desc: "Powerful swimmers with thick blubber and formidable tusks.", img: "https://emojicdn.elk.sh/🦭" },
+          { name: "Musk Ox", emoji: "🐂", desc: "Strong herd animals with thick coats and defensive formations.", img: "https://emojicdn.elk.sh/🐂" }
+        ],
+        highSpeed: [
+          { name: "Arctic Hare", emoji: "🐇", desc: "Fast-moving herbivores with seasonal camouflage.", img: "https://emojicdn.elk.sh/🐇" },
+          { name: "Snowy Owl", emoji: "🦉", desc: "Swift silent hunters of the tundra.", img: "https://emojicdn.elk.sh/🦉" }
+        ],
+        highStealth: [
+          { name: "Snow Leopard", emoji: "🐆", desc: "Elusive mountain cats with perfect camouflage for snowy terrain.", img: "https://emojicdn.elk.sh/🐆" },
+          { name: "Ptarmigan", emoji: "🐦", desc: "Birds that change color with the seasons for perfect camouflage.", img: "https://emojicdn.elk.sh/🐦" }
+        ],
+        highResistance: [
+          { name: "Narwhal", emoji: "🦄", desc: "Arctic whales with incredible cold resistance and unique tusks.", img: "https://emojicdn.elk.sh/🦄" },
+          { name: "Emperor Penguin", emoji: "🐧", desc: "Birds that withstand the harshest winters on Earth.", img: "https://emojicdn.elk.sh/🐧" }
+        ]
+      },
+      desert: {
+        highIntelligence: [
+          { name: "Desert Fox", emoji: "🦊", desc: "Clever nocturnal hunters with large ears for heat dissipation.", img: "https://emojicdn.elk.sh/🦊" },
+          { name: "Raven", emoji: "🐦‍⬛", desc: "Highly intelligent birds that thrive in harsh desert conditions.", img: "https://emojicdn.elk.sh/🐦‍⬛" }
+        ],
+        highStrength: [
+          { name: "Camel", emoji: "🐪", desc: "Powerful desert-adapted mammals that can go long periods without water.", img: "https://emojicdn.elk.sh/🐪" },
+          { name: "Desert Monitor", emoji: "🦎", desc: "Strong lizards that dominate the desert food chain.", img: "https://emojicdn.elk.sh/🦎" }
+        ],
+        highSpeed: [
+          { name: "Roadrunner", emoji: "🐦", desc: "Fast-running birds that can outpace predators.", img: "https://emojicdn.elk.sh/🐦" },
+          { name: "Sidewinder Snake", emoji: "🐍", desc: "Unique snakes that move quickly across hot sand.", img: "https://emojicdn.elk.sh/🐍" }
+        ],
+        highStealth: [
+          { name: "Sand Cat", emoji: "🐈", desc: "Small felines with perfect desert camouflage and silent movement.", img: "https://emojicdn.elk.sh/🐈" },
+          { name: "Scorpion", emoji: "🦂", desc: "Nocturnal predators that hide during the day.", img: "https://emojicdn.elk.sh/🦂" }
+        ],
+        highResistance: [
+          { name: "Kangaroo Rat", emoji: "🐀", desc: "Small rodents that never need to drink water.", img: "https://emojicdn.elk.sh/🐀" },
+          { name: "Tortoise", emoji: "🐢", desc: "Slow-moving reptiles that can survive extreme heat.", img: "https://emojicdn.elk.sh/🐢" }
+        ]
+      },
+      forest: {
+        highIntelligence: [
+          { name: "Raccoon", emoji: "🦝", desc: "Clever omnivores with dexterous paws and problem-solving skills.", img: "https://emojicdn.elk.sh/🦝" },
+          { name: "Crow", emoji: "🐦‍⬛", desc: "Highly intelligent birds that use tools and solve complex problems.", img: "https://emojicdn.elk.sh/🐦‍⬛" }
+        ],
+        highStrength: [
+          { name: "Bear", emoji: "🐻", desc: "Powerful omnivores that dominate the forest ecosystem.", img: "https://emojicdn.elk.sh/🐻" },
+          { name: "Moose", emoji: "🫎", desc: "Massive herbivores with formidable antlers.", img: "https://emojicdn.elk.sh/🫎" }
+        ],
+        highSpeed: [
+          { name: "Deer", emoji: "🦌", desc: "Swift runners that can navigate dense forest terrain.", img: "https://emojicdn.elk.sh/🦌" },
+          { name: "Hawk", emoji: "🦅", desc: "Fast-flying predators with excellent vision.", img: "https://emojicdn.elk.sh/🦅" }
+        ],
+        highStealth: [
+          { name: "Owl", emoji: "🦉", desc: "Silent nocturnal hunters with exceptional hearing.", img: "https://emojicdn.elk.sh/🦉" },
+          { name: "Stick Insect", emoji: "🦗", desc: "Masters of camouflage that perfectly mimic their environment.", img: "https://emojicdn.elk.sh/🦗" }
+        ],
+        highResistance: [
+          { name: "Wild Boar", emoji: "🐗", desc: "Tough omnivores that can survive in varied conditions.", img: "https://emojicdn.elk.sh/🐗" },
+          { name: "Badger", emoji: "🦡", desc: "Tenacious diggers with thick skin and strong defenses.", img: "https://emojicdn.elk.sh/🦡" }
+        ]
+      },
+      jungle: {
+        highIntelligence: [
+          { name: "Orangutan", emoji: "🦧", desc: "Highly intelligent primates with excellent problem-solving skills.", img: "https://emojicdn.elk.sh/🦧" },
+          { name: "Parrot", emoji: "🦜", desc: "Smart birds capable of complex communication and tool use.", img: "https://emojicdn.elk.sh/🦜" }
+        ],
+        highStrength: [
+          { name: "Gorilla", emoji: "🦍", desc: "Powerful primates with immense strength and gentle social behavior.", img: "https://emojicdn.elk.sh/🦍" },
+          { name: "Jaguar", emoji: "🐆", desc: "Strongest big cat relative to size with powerful bite.", img: "https://emojicdn.elk.sh/🐆" }
+        ],
+        highSpeed: [
+          { name: "Gibbon", emoji: "🐵", desc: "Swift tree-swinging primates with incredible agility.", img: "https://emojicdn.elk.sh/🐵" },
+          { name: "Harpy Eagle", emoji: "🦅", desc: "Fast-flying apex predators of the jungle canopy.", img: "https://emojicdn.elk.sh/🦅" }
+        ],
+        highStealth: [
+          { name: "Leopard", emoji: "🐆", desc: "Stealthy big cats that hunt from trees.", img: "https://emojicdn.elk.sh/🐆" },
+          { name: "Chameleon", emoji: "🦎", desc: "Masters of color-changing camouflage.", img: "https://emojicdn.elk.sh/🦎" }
+        ],
+        highResistance: [
+          { name: "Anaconda", emoji: "🐍", desc: "Massive constrictor snakes that dominate jungle waterways.", img: "https://emojicdn.elk.sh/🐍" },
+          { name: "Toucan", emoji: "🐦", desc: "Colorful birds with strong immune systems.", img: "https://emojicdn.elk.sh/🐦" }
+        ]
+      },
+      ocean: {
+        highIntelligence: [
+          { name: "Dolphin", emoji: "🐬", desc: "Highly intelligent and social marine mammals with complex communication.", img: "https://emojicdn.elk.sh/🐬" },
+          { name: "Octopus", emoji: "🐙", desc: "Brilliant invertebrates with amazing problem-solving skills and camouflage.", img: "https://emojicdn.elk.sh/🐙" }
+        ],
+        highStrength: [
+          { name: "Orca", emoji: "🐳", desc: "Apex predators of the ocean with incredible strength and hunting strategies.", img: "https://emojicdn.elk.sh/🐳" },
+          { name: "Great White Shark", emoji: "🦈", desc: "Powerful hunters with immense bite force.", img: "https://emojicdn.elk.sh/🦈" }
+        ],
+        highSpeed: [
+          { name: "Sailfish", emoji: "🐟", desc: "Fastest fish in the ocean with incredible acceleration.", img: "https://emojicdn.elk.sh/🐟" },
+          { name: "Penguin", emoji: "🐧", desc: "Swift underwater swimmers despite being flightless birds.", img: "https://emojicdn.elk.sh/🐧" }
+        ],
+        highStealth: [
+          { name: "Cuttlefish", emoji: "🦑", desc: "Masters of camouflage that can change color instantly.", img: "https://emojicdn.elk.sh/🦑" },
+          { name: "Anglerfish", emoji: "🐡", desc: "Deep-sea predators that lure prey with bioluminescence.", img: "https://emojicdn.elk.sh/🐡" }
+        ],
+        highResistance: [
+          { name: "Tardigrade", emoji: "🐛", desc: "Microscopic 'water bears' that can survive extreme ocean depths.", img: "https://emojicdn.elk.sh/🐛" },
+          { name: "Giant Tube Worm", emoji: "🪱", desc: "Deep-sea creatures that thrive in extreme hydrothermal vents.", img: "https://emojicdn.elk.sh/🪱" }
+        ]
+      },
+      grassland: {
+        highIntelligence: [
+          { name: "African Wild Dog", emoji: "🐕", desc: "Highly social and intelligent pack hunters with complex communication.", img: "https://emojicdn.elk.sh/🐕" },
+          { name: "Elephant", emoji: "🐘", desc: "Massive, intelligent herbivores with complex social structures.", img: "https://emojicdn.elk.sh/🐘" }
+        ],
+        highStrength: [
+          { name: "Lion", emoji: "🦁", desc: "Powerful apex predators that hunt in coordinated prides.", img: "https://emojicdn.elk.sh/🦁" },
+          { name: "Rhino", emoji: "🦏", desc: "Massive herbivores with thick skin and formidable horns.", img: "https://emojicdn.elk.sh/🦏" }
+        ],
+        highSpeed: [
+          { name: "Cheetah", emoji: "🐆", desc: "Fastest land animal, built for explosive acceleration.", img: "https://emojicdn.elk.sh/🐆" },
+          { name: "Pronghorn Antelope", emoji: "🦌", desc: "Second fastest land animal with incredible endurance.", img: "https://emojicdn.elk.sh/🦌" }
+        ],
+        highStealth: [
+          { name: "Leopard", emoji: "🐆", desc: "Solitary cats that use stealth and camouflage to hunt.", img: "https://emojicdn.elk.sh/🐆" },
+          { name: "Serval", emoji: "🐈", desc: "Tall-eared cats that silently stalk grassland prey.", img: "https://emojicdn.elk.sh/🐈" }
+        ],
+        highResistance: [
+          { name: "Wildebeest", emoji: "🐃", desc: "Tough migratory herbivores that survive long dry seasons.", img: "https://emojicdn.elk.sh/🐃" },
+          { name: "Hippo", emoji: "🦛", desc: "Massive semi-aquatic mammals with thick protective skin.", img: "https://emojicdn.elk.sh/🦛" }
+        ]
+      },
+      extinct: [
+        { name: "Dodo", emoji: "🦤", desc: "Flightless bird that couldn't adapt to human hunters.", img: "https://emojicdn.elk.sh/🦤" },
+        { name: "Tasmanian Tiger", emoji: "🐅", desc: "Unique marsupial predator hunted to extinction.", img: "https://emojicdn.elk.sh/🐅" },
+        { name: "Extinct Blob", emoji: "☠️", desc: "Sometimes evolution doesn't go as planned!", img: "https://emojicdn.elk.sh/☠️" }
+      ]
+    };
+
+    function selectEnvironment(env) {
+      currentEnvironment = env;
+      document.querySelectorAll('.environment-btn').forEach(btn => {
+        btn.style.backgroundColor = btn.textContent.includes(env) ? '#ffa500' : '#17a2b8';
+      });
+    }
+
+    function startGame() {
+      if (!currentEnvironment) {
+        alert("Please select an environment first!");
+        return;
+      }
+      
+      document.getElementById('startScreen').style.display = 'none';
+      document.getElementById('gameScreen').style.display = 'block';
+      document.getElementById('environmentDisplay').textContent = `Environment: ${currentEnvironment.charAt(0).toUpperCase() + currentEnvironment.slice(1)}`;
+      
+      // Set stages based on environment
+      stages = environmentStages[currentEnvironment];
+      stageIndex = 0;
+      
+      // Reset stats with slight variation based on environment
+      stats.energy = 5;
+      stats.speed = 5;
+      stats.intelligence = 5;
+      stats.stealth = 5;
+      stats.strength = 5;
+      stats.reproduction = 5;
+      stats.resistance = 5;
+      
+      // Environment bonuses
+      if (currentEnvironment === 'arctic') {
+        stats.resistance += 2;
+        stats.speed -= 1;
+      } else if (currentEnvironment === 'desert') {
+        stats.resistance += 1;
+        stats.energy -= 1;
+      } else if (currentEnvironment === 'forest') {
+        stats.stealth += 1;
+        stats.intelligence += 1;
+      } else if (currentEnvironment === 'jungle') {
+        stats.reproduction += 1;
+        stats.energy -= 1;
+      } else if (currentEnvironment === 'ocean') {
+        stats.speed += 1;
+        stats.strength -= 1;
+      } else if (currentEnvironment === 'grassland') {
+        stats.speed += 2;
+        stats.stealth -= 1;
+      }
+      
+      renderStage();
+    }
+
+    function updateStats() {
+      const statsContainer = document.getElementById('stats');
+      statsContainer.innerHTML = Object.keys(stats).map(stat => `
+        <div>
+          <strong>${stat}:</strong>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" style="width: ${(stats[stat] / 10) * 100}%;"></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderStage() {
+      if (stageIndex < stages.length) {
+        const stage = stages[stageIndex];
+        let html = `<p>${stage.text}</p>`;
+        stage.choices.forEach((choice, index) => {
+          html += `<button class="choice-btn" onclick="choose(${index})">
+                    ${choice.text}
+                  </button>
+                  <div class="fun-fact">${choice.fact}</div>`;
+        });
+        document.getElementById('game').innerHTML = html;
+      } else {
+        endGame();
+      }
+      updateStats();
+    }
+
+    function choose(choiceIndex) {
+      const stage = stages[stageIndex];
+      stage.choices[choiceIndex].effect();
+      stageIndex++;
+      renderStage();
+    }
+
+    function endGame() {
+      document.getElementById('game').innerHTML = '';
+      let outcome = "You became... ";
+      let animalCategory = '';
+      let animal = null;
+      
+      // Check for extinction first
+      if (stats.energy <= 0) {
+        animalCategory = 'extinct';
+        outcome = "You ran out of energy and became extinct! ☠️<br><small>Sometimes, evolution doesn't go as planned!</small>";
+        const animals = animalOutcomes[animalCategory];
+        animal = animals[Math.floor(Math.random() * animals.length)];
+      } 
+      // Otherwise determine based on highest stats
+      else {
+        // Find the highest stat
+        const maxStat = Object.entries(stats).reduce((max, [stat, value]) => 
+          value > max.value ? {stat, value} : max, {stat: '', value: -Infinity});
+        
+        // Determine category based on highest stat
+        if (maxStat.value >= 7) {
+          if (maxStat.stat === 'intelligence') animalCategory = 'highIntelligence';
+          else if (maxStat.stat === 'strength') animalCategory = 'highStrength';
+          else if (maxStat.stat === 'speed') animalCategory = 'highSpeed';
+          else if (maxStat.stat === 'stealth') animalCategory = 'highStealth';
+          else if (maxStat.stat === 'resistance') animalCategory = 'highResistance';
+          else animalCategory = 'balanced';
+          
+          outcome += `a ${maxStat.stat}-focused creature!`;
+        } else {
+          animalCategory = 'balanced';
+          outcome += "a well-balanced creature!";
+        }
+        
+        // Get environment-specific animals
+        const animals = animalOutcomes[currentEnvironment][animalCategory];
+        animal = animals[Math.floor(Math.random() * animals.length)];
+      }
+      
+      // Display outcome
+      document.getElementById('endMessage').innerHTML = `
+        ${outcome}<br>
+        <strong>The ${animal.name} ${animal.emoji}</strong><br>
+        <small>${animal.desc}</small>
+      `;
+      
+      // Show animal image
+      const imgElement = document.getElementById('animalImage');
+      imgElement.src = animal.img;
+      imgElement.style.display = 'block';
+      imgElement.alt = animal.name;
+      
+      document.getElementById('playAgainBtn').style.display = 'block';
+    }
+
+    function resetGame() {
+      document.getElementById('startScreen').style.display = 'block';
+      document.getElementById('gameScreen').style.display = 'none';
+      document.getElementById('animalImage').style.display = 'none';
+      document.getElementById('endMessage').innerText = '';
+      document.getElementById('playAgainBtn').style.display = 'none';
+      document.querySelectorAll('.environment-btn').forEach(btn => {
+        btn.style.backgroundColor = '#17a2b8';
+      });
+      currentEnvironment = '';
+    }
+
+    // Initialize play again button
+    document.getElementById('playAgainBtn').addEventListener('click', resetGame);
+  </script>
+</body>
+</html>
